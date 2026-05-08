@@ -397,7 +397,7 @@ export function GlobalAIChat() {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: '100%', opacity: 0 }}
           transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-          className="fixed right-0 top-0 h-screen w-chat-panel bg-white border-l border-border z-20 flex flex-col shadow-xl"
+          className="fixed right-0 top-14 lg:top-0 h-[calc(100vh-3.5rem)] lg:h-screen w-full lg:w-chat-panel bg-white border-l border-border z-20 flex flex-col shadow-xl"
         >
           {/* Header */}
           <header className="px-4 pt-3.5 pb-0 border-b border-border flex-shrink-0">

@@ -1,4 +1,5 @@
 import { Sidebar } from '@/ui/navigation/Sidebar'
+import { MobileHeader } from '@/ui/navigation/MobileHeader'
 import { GlobalAIChat } from '@/ui/components/GlobalAIChat'
 import { getAllModules, getConceptsByModule } from '@/core/content/service'
 import type { Concept } from '@/types/core'
@@ -17,8 +18,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-canvas">
       <Sidebar modules={modules} conceptsByModule={conceptsByModule} />
-      <main className="pl-sidebar min-h-screen">
-        <div className="max-w-[900px] px-8 py-10">
+      <MobileHeader />
+      <main className="lg:pl-sidebar min-h-screen pt-14 lg:pt-0">
+        <div className="max-w-[900px] px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
           {children}
         </div>
       </main>
