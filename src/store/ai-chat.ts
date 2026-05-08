@@ -1,7 +1,7 @@
 import { create } from 'zustand'
-import type { ChatMessage } from '@/types/core'
+import type { ChatMessage, AnalysisContext } from '@/types/core'
 
-export type ChatMode = 'general' | 'concept'
+export type ChatMode = 'general' | 'concept' | 'data'
 
 interface AIChatStore {
   isOpen: boolean
@@ -9,9 +9,11 @@ interface AIChatStore {
 
   generalHistory: ChatMessage[]
   conceptHistories: Record<string, ChatMessage[]>
+  dataHistory: ChatMessage[]
 
   currentConceptId: string | undefined
   currentConceptTitle: string | undefined
+  dataContext: AnalysisContext | undefined
 
   open: () => void
   close: () => void
@@ -21,12 +23,18 @@ interface AIChatStore {
   setConceptContext: (conceptId: string, conceptTitle: string) => void
   clearConceptContext: () => void
 
+  setDataContext: (ctx: AnalysisContext) => void
+  clearDataContext: () => void
+
   addToGeneral: (msgs: ChatMessage[]) => void
   addToConcept: (conceptId: string, msgs: ChatMessage[]) => void
+  addToData: (msgs: ChatMessage[]) => void
   clearGeneralHistory: () => void
   clearConceptHistory: (conceptId: string) => void
+  clearDataHistory: () => void
   popLastGeneral: () => void
   popLastConcept: (conceptId: string) => void
+  popLastData: () => void
 }
 
 export const useAIChatStore = create<AIChatStore>((set) => ({
@@ -35,9 +43,11 @@ export const useAIChatStore = create<AIChatStore>((set) => ({
 
   generalHistory: [],
   conceptHistories: {},
+  dataHistory: [],
 
   currentConceptId: undefined,
   currentConceptTitle: undefined,
+  dataContext: undefined,
 
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
@@ -54,6 +64,14 @@ export const useAIChatStore = create<AIChatStore>((set) => ({
       activeMode: s.activeMode === 'concept' ? 'general' : s.activeMode,
     })),
 
+  setDataContext: (ctx) => set({ dataContext: ctx }),
+
+  clearDataContext: () =>
+    set((s) => ({
+      dataContext: undefined,
+      activeMode: s.activeMode === 'data' ? 'general' : s.activeMode,
+    })),
+
   addToGeneral: (msgs) =>
     set((s) => ({ generalHistory: [...s.generalHistory, ...msgs] })),
 
@@ -65,12 +83,17 @@ export const useAIChatStore = create<AIChatStore>((set) => ({
       },
     })),
 
+  addToData: (msgs) =>
+    set((s) => ({ dataHistory: [...s.dataHistory, ...msgs] })),
+
   clearGeneralHistory: () => set({ generalHistory: [] }),
 
   clearConceptHistory: (conceptId) =>
     set((s) => ({
       conceptHistories: { ...s.conceptHistories, [conceptId]: [] },
     })),
+
+  clearDataHistory: () => set({ dataHistory: [] }),
 
   popLastGeneral: () =>
     set((s) => ({ generalHistory: s.generalHistory.slice(0, -1) })),
@@ -82,4 +105,7 @@ export const useAIChatStore = create<AIChatStore>((set) => ({
         [conceptId]: (s.conceptHistories[conceptId] ?? []).slice(0, -1),
       },
     })),
+
+  popLastData: () =>
+    set((s) => ({ dataHistory: s.dataHistory.slice(0, -1) })),
 }))

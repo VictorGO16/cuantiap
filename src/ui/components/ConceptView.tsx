@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { DesignDecisionFlow } from './DesignDecisionFlow'
 import { ExplanationRenderer } from './ExplanationRenderer'
 import { getConcept } from '@/core/content/service'
 import type { Concept } from '@/types/core'
@@ -46,6 +47,13 @@ export function ConceptView({ concept }: ConceptViewProps) {
           <SectionLabel>Explicación</SectionLabel>
           <ExplanationRenderer text={concept.explanation} />
         </section>
+
+        {concept.id === 'metodologia-disenos' && (
+          <section>
+            <SectionLabel>Flujo decisional</SectionLabel>
+            <DesignDecisionFlow />
+          </section>
+        )}
 
         {/* Ejemplos */}
         {concept.examples.length > 0 && (

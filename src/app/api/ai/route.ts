@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
       chatMode: body.chatMode ?? 'concept',
       conceptId: body.conceptId,
       moduleId: body.moduleId,
+      navContext: body.navContext,
+      dataContext: body.dataContext,
       history: body.history ?? [],
     })
 

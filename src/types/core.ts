@@ -144,7 +144,7 @@ export interface ChatMessage {
   timestamp: string
 }
 
-export type AIChatMode = 'general' | 'concept'
+export type AIChatMode = 'general' | 'concept' | 'data'
 
 export interface AIChatRequest {
   message: string
@@ -152,7 +152,76 @@ export interface AIChatRequest {
   conceptId?: string
   moduleId?: string
   navContext?: string
+  dataContext?: AnalysisContext
   history: ChatMessage[]
+}
+
+// --- Módulo Interactivo ---
+
+export type InteractiveTool = 'distribuciones' | 'grupos' | 'psicometria' | 'variables'
+
+export interface DescriptiveStats {
+  n: number
+  mean: number
+  sd: number
+  median: number
+  min: number
+  max: number
+  skewness: number
+  kurtosis: number
+}
+
+export interface GroupStats {
+  name: string
+  n: number
+  mean: number
+  sd: number
+}
+
+export interface TestResult {
+  type: 't' | 'anova' | 'r'
+  statistic: number
+  df: string
+  pValue: number
+  effectSize: number
+  effectLabel: string
+  significant: boolean
+}
+
+export interface ItemStats {
+  id: string
+  label: string
+  mean: number
+  sd: number
+  itemTotal: number
+  alphaIfDeleted: number
+}
+
+export interface InstrumentResult {
+  name: string
+  sigla: string
+  nItems: number
+  alpha: number
+  items: ItemStats[]
+}
+
+export interface AnalysisContext {
+  tool: InteractiveTool
+  datasetId: string
+  datasetLabel: string
+  variableId?: string
+  variableLabel?: string
+  groupById?: string
+  groupByLabel?: string
+  instrumentId?: string
+  instrumentLabel?: string
+  results?: {
+    descriptives?: DescriptiveStats
+    filter?: string
+    groups?: GroupStats[]
+    test?: TestResult
+    instrument?: InstrumentResult
+  }
 }
 
 export interface AIChatResponse {

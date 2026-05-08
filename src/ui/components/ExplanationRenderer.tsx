@@ -74,6 +74,18 @@ function isHeading(block: string): boolean {
   return /^\*\*[^*]+\*\*[:\s]*$/.test(block.trim())
 }
 
+function getOrderedListItems(block: string): string[] | null {
+  const lines = block.trim().split('\n').map((line) => line.trim()).filter(Boolean)
+  if (lines.length === 0 || !lines.every((line) => /^\d+\.\s+/.test(line))) return null
+  return lines.map((line) => line.replace(/^\d+\.\s+/, ''))
+}
+
+function getUnorderedListItems(block: string): string[] | null {
+  const lines = block.trim().split('\n').map((line) => line.trim()).filter(Boolean)
+  if (lines.length === 0 || !lines.every((line) => /^[-*]\s+/.test(line))) return null
+  return lines.map((line) => line.replace(/^[-*]\s+/, ''))
+}
+
 // Detect if block starts with **term**: followed by description
 function startsWithBoldTerm(block: string): boolean {
   return /^\*\*[^*]+\*\*:/.test(block.trim())
@@ -100,6 +112,32 @@ function renderBlock(block: string, index: number): React.ReactNode {
       <h4 key={index} className="text-sm font-semibold text-ink mt-6 mb-2 first:mt-0">
         {text}
       </h4>
+    )
+  }
+
+  const orderedItems = getOrderedListItems(trimmed)
+  if (orderedItems) {
+    return (
+      <ol key={index} className="my-4 space-y-2 pl-6 list-decimal text-sm text-ink leading-7">
+        {orderedItems.map((item, i) => (
+          <li key={i} className="pl-1 marker:text-ink-faint marker:font-medium">
+            {renderInline(item)}
+          </li>
+        ))}
+      </ol>
+    )
+  }
+
+  const unorderedItems = getUnorderedListItems(trimmed)
+  if (unorderedItems) {
+    return (
+      <ul key={index} className="my-4 space-y-2 pl-5 list-disc text-sm text-ink leading-7">
+        {unorderedItems.map((item, i) => (
+          <li key={i} className="pl-1 marker:text-accent">
+            {renderInline(item)}
+          </li>
+        ))}
+      </ul>
     )
   }
 

@@ -31,6 +31,13 @@ const MODULE_LABELS: Record<string, string> = {
   estadistica: 'E',
 }
 
+const INTERACTIVE_TOOLS = [
+  { href: '/interactivo/distribuciones', label: 'Distribuciones' },
+  { href: '/interactivo/grupos', label: 'Comparador de grupos' },
+  { href: '/interactivo/psicometria', label: 'Analizador psicométrico' },
+  { href: '/interactivo/variables', label: 'Correlación bivariada' },
+]
+
 function IconChat({ className }: { className?: string }) {
   return (
     <svg width="15" height="15" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
@@ -55,7 +62,7 @@ export function Sidebar({ modules, conceptsByModule }: SidebarProps) {
   }, [pathname, closeSidebar])
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
-    const init: Record<string, boolean> = {}
+    const init: Record<string, boolean> = { interactivo: pathname.startsWith('/interactivo') }
     modules.forEach((m) => {
       init[m.id] = pathname.startsWith(MODULE_PATHS[m.id] ?? '/')
     })
@@ -181,6 +188,72 @@ export function Sidebar({ modules, conceptsByModule }: SidebarProps) {
             )
           })}
         </nav>
+
+        {/* Interactive module */}
+        <div className="mt-2 mb-0.5">
+          <button
+            onClick={() => toggle('interactivo')}
+            className={`
+              w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left
+              transition-colors duration-100
+              ${pathname.startsWith('/interactivo')
+                ? 'text-ink'
+                : 'text-ink-muted hover:text-ink hover:bg-border/60'
+              }
+            `}
+          >
+            <span className={`
+              w-5 h-5 rounded flex items-center justify-center flex-shrink-0 text-2xs font-bold
+              transition-colors duration-100
+              ${pathname.startsWith('/interactivo') ? 'bg-ink text-white' : 'bg-border text-ink-muted'}
+            `}>
+              Ex
+            </span>
+            <span className={`text-xs flex-1 font-medium ${pathname.startsWith('/interactivo') ? 'text-ink' : ''}`}>
+              Explorador
+            </span>
+            <motion.span
+              animate={{ rotate: expanded['interactivo'] ? 90 : 0 }}
+              transition={{ duration: 0.15 }}
+              className="text-ink-faint text-xs ml-0.5"
+            >
+              ›
+            </motion.span>
+          </button>
+
+          <AnimatePresence initial={false}>
+            {expanded['interactivo'] && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="ml-2 pl-3 border-l border-border mt-0.5 mb-1 space-y-0.5">
+                  {INTERACTIVE_TOOLS.map((tool) => {
+                    const isActive = pathname === tool.href
+                    return (
+                      <Link
+                        key={tool.href}
+                        href={tool.href}
+                        className={`
+                          block px-2 py-1.5 rounded text-xs leading-snug transition-colors duration-100
+                          ${isActive
+                            ? 'text-accent font-medium bg-accent-light'
+                            : 'text-ink-muted hover:text-ink hover:bg-border/50'
+                          }
+                        `}
+                      >
+                        {tool.label}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Assistant button */}
         <div className="px-3 py-2.5 border-t border-border flex-shrink-0">

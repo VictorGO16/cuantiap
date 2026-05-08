@@ -172,7 +172,19 @@ function TypingIndicator() {
   )
 }
 
-function EmptyState({ mode, conceptTitle }: { mode: ChatMode; conceptTitle?: string }) {
+const TOOL_LABELS: Record<string, string> = {
+  distribuciones: 'Distribuciones',
+  grupos: 'Grupos',
+  psicometria: 'Psicometría',
+  variables: 'Correlación',
+}
+
+function EmptyState({ mode, conceptTitle, datasetLabel, toolLabel }: {
+  mode: ChatMode
+  conceptTitle?: string
+  datasetLabel?: string
+  toolLabel?: string
+}) {
   if (mode === 'general') {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
@@ -183,6 +195,26 @@ function EmptyState({ mode, conceptTitle }: { mode: ChatMode; conceptTitle?: str
           <p className="text-sm text-ink-muted font-medium">Asistente general del curso</p>
           <p className="text-xs text-ink-faint mt-1.5 leading-relaxed">
             Podés preguntar sobre cualquier tema de los cuatro módulos. El asistente sabe en qué página estás.
+          </p>
+        </div>
+      </div>
+    )
+  }
+  if (mode === 'data') {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
+        <div className="w-10 h-10 rounded-full bg-sidebar border border-border flex items-center justify-center">
+          <span className="text-xs font-bold text-ink-muted">D</span>
+        </div>
+        <div>
+          <p className="text-sm text-ink-muted font-medium">Intérprete de resultados</p>
+          <p className="text-xs text-ink-faint mt-1.5 leading-relaxed">
+            Ejecutá un análisis en{' '}
+            <span className="font-medium text-ink-muted">{toolLabel}</span>
+            {datasetLabel && (
+              <> con el dataset <span className="font-medium text-ink-muted">{datasetLabel}</span></>
+            )}
+            {' '}y pedile al asistente que interprete los resultados.
           </p>
         </div>
       </div>
@@ -252,14 +284,19 @@ export function GlobalAIChat() {
     setActiveMode,
     generalHistory,
     conceptHistories,
+    dataHistory,
     currentConceptId,
     currentConceptTitle,
+    dataContext,
     addToGeneral,
     addToConcept,
+    addToData,
     clearGeneralHistory,
     clearConceptHistory,
+    clearDataHistory,
     popLastGeneral,
     popLastConcept,
+    popLastData,
   } = useAIChatStore()
 
   const [input, setInput] = useState('')
@@ -271,7 +308,12 @@ export function GlobalAIChat() {
   const activeHistory =
     activeMode === 'general'
       ? generalHistory
+      : activeMode === 'data'
+      ? dataHistory
       : (conceptHistories[currentConceptId ?? ''] ?? [])
+
+  const canUseData = !!dataContext
+  const dataTabLabel = 'Explorador'
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -288,9 +330,12 @@ export function GlobalAIChat() {
     const cid = store.currentConceptId
     const ctitle = store.currentConceptTitle
     const mode = store.activeMode
+    const ctx = store.dataContext
     const historySnapshot =
       mode === 'general'
         ? store.generalHistory
+        : mode === 'data'
+        ? store.dataHistory
         : (store.conceptHistories[cid ?? ''] ?? [])
 
     const userMsg: ChatMessage = {
@@ -301,6 +346,7 @@ export function GlobalAIChat() {
 
     if (addToHistory) {
       if (mode === 'general') addToGeneral([userMsg])
+      else if (mode === 'data') addToData([userMsg])
       else if (cid) addToConcept(cid, [userMsg])
     }
 
@@ -317,6 +363,7 @@ export function GlobalAIChat() {
         chatMode: mode,
         conceptId: mode === 'concept' ? cid : undefined,
         navContext: mode === 'general' ? navContext : undefined,
+        dataContext: mode === 'data' ? ctx : undefined,
         history: historySnapshot,
       }
 
@@ -339,18 +386,19 @@ export function GlobalAIChat() {
       }
 
       if (mode === 'general') addToGeneral([assistantMsg])
+      else if (mode === 'data') addToData([assistantMsg])
       else if (cid) addToConcept(cid, [assistantMsg])
     } catch {
-      // Roll back the optimistic user message and store it for retry
       if (addToHistory) {
         if (mode === 'general') popLastGeneral()
+        else if (mode === 'data') popLastData()
         else if (cid) popLastConcept(cid)
       }
       setFailedMessage(message)
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, addToGeneral, addToConcept, popLastGeneral, popLastConcept])
+  }, [isLoading, addToGeneral, addToConcept, addToData, popLastGeneral, popLastConcept, popLastData])
 
   const send = useCallback(() => {
     const message = input.trim()
@@ -377,11 +425,13 @@ export function GlobalAIChat() {
   function handleClear() {
     setFailedMessage(null)
     if (activeMode === 'general') clearGeneralHistory()
+    else if (activeMode === 'data') clearDataHistory()
     else if (currentConceptId) clearConceptHistory(currentConceptId)
   }
 
   function switchMode(mode: ChatMode) {
     if (mode === 'concept' && !currentConceptId) return
+    if (mode === 'data' && !dataContext) return
     setActiveMode(mode)
     setFailedMessage(null)
   }
@@ -455,16 +505,35 @@ export function GlobalAIChat() {
               >
                 {currentConceptTitle ?? 'Concepto'}
               </button>
+              {canUseData && (
+                <button
+                  onClick={() => switchMode('data')}
+                  className={`
+                    flex-1 text-xs font-medium px-3 py-2 border-b-2 transition-colors duration-100 truncate
+                    ${activeMode === 'data'
+                      ? 'text-ink border-ink'
+                      : 'text-ink-muted border-transparent hover:text-ink'
+                    }
+                  `}
+                >
+                  {dataTabLabel}
+                </button>
+              )}
             </div>
           </header>
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4">
             {!hasContent && !isLoading && (
-              <EmptyState mode={activeMode} conceptTitle={currentConceptTitle} />
+              <EmptyState
+                mode={activeMode}
+                conceptTitle={currentConceptTitle}
+                datasetLabel={dataContext?.datasetLabel}
+                toolLabel={dataContext ? TOOL_LABELS[dataContext.tool] : undefined}
+              />
             )}
             {activeHistory.map((msg, i) => (
-              <MessageBubble key={`${activeMode}-${currentConceptId ?? 'g'}-${i}`} message={msg} />
+              <MessageBubble key={`${activeMode}-${activeMode === 'data' ? 'd' : (currentConceptId ?? 'g')}-${i}`} message={msg} />
             ))}
             {isLoading && <TypingIndicator />}
             {failedMessage && !isLoading && (
@@ -484,6 +553,8 @@ export function GlobalAIChat() {
                 placeholder={
                   activeMode === 'general'
                     ? 'Pregunta sobre el curso...'
+                    : activeMode === 'data'
+                    ? 'Pide una interpretación de los resultados...'
                     : `Pregunta sobre ${currentConceptTitle ?? 'este concepto'}...`
                 }
                 rows={2}
