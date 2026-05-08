@@ -144,10 +144,14 @@ export interface ChatMessage {
   timestamp: string
 }
 
+export type AIChatMode = 'general' | 'concept'
+
 export interface AIChatRequest {
   message: string
+  chatMode: AIChatMode
   conceptId?: string
   moduleId?: string
+  navContext?: string
   history: ChatMessage[]
 }
 

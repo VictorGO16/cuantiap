@@ -1,19 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { buildContext } from './context-builder'
 import { PROMPTS, PROMPT_VERSION } from './prompt-registry'
-import type { AIChatRequest, AIChatResponse, AIMode, ChatMessage } from '@/types/core'
+import type { AIChatRequest, AIChatResponse, ChatMessage } from '@/types/core'
 
 if (!process.env.GEMINI_API_KEY) {
   throw new Error('GEMINI_API_KEY no está configurada.')
 }
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-
-function buildUserPrompt(message: string, context: string): string {
-  if (!context) return message
-
-  return `Contexto académico del concepto que el estudiante está estudiando:\n\n${context}\n\n---\n\nConsulta del estudiante: ${message}`
-}
 
 function toGeminiHistory(history: ChatMessage[]) {
   return history.map((msg) => ({
@@ -22,36 +16,66 @@ function toGeminiHistory(history: ChatMessage[]) {
   }))
 }
 
-export async function processChat(request: AIChatRequest): Promise<AIChatResponse> {
-  const { message, conceptId, moduleId, history } = request
+async function processChatGeneral(request: AIChatRequest): Promise<AIChatResponse> {
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    systemInstruction: PROMPTS.general,
+  })
 
+  const chat = model.startChat({
+    history: toGeminiHistory(request.history),
+  })
+
+  // navContext is sent as data so the model knows where in the app the user is.
+  // This is not a prompt patch — it's structured navigation data injected per message.
+  const messageWithNav = request.navContext
+    ? `[Navegación actual: ${request.navContext}]\n\n${request.message}`
+    : request.message
+
+  const result = await chat.sendMessage(messageWithNav)
+
+  return {
+    content: result.response.text(),
+    mode: 'explanation',
+    conceptIds: [],
+  }
+}
+
+async function processChatConcept(request: AIChatRequest): Promise<AIChatResponse> {
   const aiContext = await buildContext({
-    conceptId,
-    moduleId,
-    userMessage: message,
-    conversationHistory: history,
+    conceptId: request.conceptId,
+    moduleId: request.moduleId,
+    userMessage: request.message,
+    conversationHistory: request.history,
   })
 
   const model = genAI.getGenerativeModel({
     model: 'gemini-2.5-flash',
-    systemInstruction: PROMPTS.systemInstruction,
+    systemInstruction: PROMPTS.concept,
   })
 
   const chat = model.startChat({
-    history: toGeminiHistory(history),
+    history: toGeminiHistory(request.history),
   })
 
-  const userPrompt = buildUserPrompt(message, aiContext.synthesizedContext ?? '')
-  const result = await chat.sendMessage(userPrompt)
-  const responseText = result.response.text()
+  const userPrompt = aiContext.synthesizedContext
+    ? `Contenido académico del concepto:\n\n${aiContext.synthesizedContext}\n\n---\n\nConsulta: ${request.message}`
+    : request.message
 
-  const mode: AIMode = 'explanation'
+  const result = await chat.sendMessage(userPrompt)
 
   return {
-    content: responseText,
-    mode,
+    content: result.response.text(),
+    mode: 'explanation',
     conceptIds: aiContext.relevantConceptIds,
   }
+}
+
+export async function processChat(request: AIChatRequest): Promise<AIChatResponse> {
+  if (request.chatMode === 'general') {
+    return processChatGeneral(request)
+  }
+  return processChatConcept(request)
 }
 
 export { PROMPT_VERSION }

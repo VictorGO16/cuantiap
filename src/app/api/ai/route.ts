@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
 
     const result = await processChat({
       message: body.message.trim(),
+      chatMode: body.chatMode ?? 'concept',
       conceptId: body.conceptId,
       moduleId: body.moduleId,
       history: body.history ?? [],

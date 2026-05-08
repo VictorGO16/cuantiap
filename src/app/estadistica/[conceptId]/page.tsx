@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { AppLayout } from '@/ui/layouts/AppLayout'
 import { ConceptView } from '@/ui/components/ConceptView'
 import { Breadcrumb } from '@/ui/navigation/Breadcrumb'
-import { AIChat } from '@/ui/components/AIChat'
+import { ContextUpdater } from '@/ui/components/ContextUpdater'
 import { getConcept } from '@/core/content/service'
 import { notFound } from 'next/navigation'
 
@@ -23,6 +23,7 @@ export default async function EstadisticaConceptPage({ params }: Props) {
 
   return (
     <AppLayout>
+      <ContextUpdater conceptId={concept.id} conceptTitle={concept.title} />
       <Breadcrumb
         items={[
           { label: 'Inicio', href: '/' },
@@ -31,7 +32,6 @@ export default async function EstadisticaConceptPage({ params }: Props) {
         ]}
       />
       <ConceptView concept={concept} />
-      <AIChat conceptId={concept.id} moduleId="estadistica" />
     </AppLayout>
   )
 }

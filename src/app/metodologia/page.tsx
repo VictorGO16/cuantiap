@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { AppLayout } from '@/ui/layouts/AppLayout'
 import { ModuleIndex } from '@/ui/components/ModuleIndex'
 import { Breadcrumb } from '@/ui/navigation/Breadcrumb'
+import { ContextUpdater } from '@/ui/components/ContextUpdater'
 import { getModule, getConceptsByModule } from '@/core/content/service'
 import { notFound } from 'next/navigation'
 
@@ -15,6 +16,7 @@ export default function MetodologiaPage() {
 
   return (
     <AppLayout>
+      <ContextUpdater />
       <Breadcrumb items={[{ label: 'Inicio', href: '/' }, { label: 'Metodología' }]} />
       <ModuleIndex module={mod} concepts={concepts} modulePath="/metodologia" />
     </AppLayout>

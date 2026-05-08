@@ -1,4 +1,5 @@
 import { Sidebar } from '@/ui/navigation/Sidebar'
+import { GlobalAIChat } from '@/ui/components/GlobalAIChat'
 import { getAllModules, getConceptsByModule } from '@/core/content/service'
 import type { Concept } from '@/types/core'
 
@@ -17,10 +18,11 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="min-h-screen bg-canvas">
       <Sidebar modules={modules} conceptsByModule={conceptsByModule} />
       <main className="pl-sidebar min-h-screen">
-        <div className="max-w-content mx-auto px-8 py-10">
+        <div className="max-w-[900px] px-8 py-10">
           {children}
         </div>
       </main>
+      <GlobalAIChat />
     </div>
   )
 }
